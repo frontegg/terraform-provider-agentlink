@@ -1,0 +1,6 @@
+provider_installation {
+  dev_overrides {
+    "frontegg/agentlink" = "/Users/aviadmizrzchi/sanbox/frontegg/agentlink-terraform-provider"
+  }
+  direct {}
+}
