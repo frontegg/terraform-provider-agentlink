@@ -684,3 +684,722 @@ func (c *Client) ImportAndUpsertSchema(ctx context.Context, appID, sourceID, sou
 
 	return nil
 }
+
+// ============================================================================
+// Application CRUD Methods
+// ============================================================================
+
+// UpdateApplicationRequest represents the request to update an application
+type UpdateApplicationRequest struct {
+	Name        string `json:"name,omitempty"`
+	AppURL      string `json:"appURL,omitempty"`
+	LoginURL    string `json:"loginURL,omitempty"`
+	LogoURL     string `json:"logoURL,omitempty"`
+	AccessType  string `json:"accessType,omitempty"`
+	IsDefault   *bool  `json:"isDefault,omitempty"`
+	IsActive    *bool  `json:"isActive,omitempty"`
+	Type        string `json:"type,omitempty"`
+	Description string `json:"description,omitempty"`
+	AllowDcr    *bool  `json:"allowDcr,omitempty"`
+}
+
+// GetApplicationByID retrieves an application by ID
+func (c *Client) GetApplicationByID(ctx context.Context, id string) (*Application, error) {
+	tflog.Info(ctx, "Fetching application by ID", map[string]interface{}{
+		"id": id,
+	})
+
+	path := fmt.Sprintf("/applications/resources/applications/v1/%s", id)
+	resp, err := c.DoRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get application: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get application with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var application Application
+	if err := json.NewDecoder(resp.Body).Decode(&application); err != nil {
+		return nil, fmt.Errorf("failed to decode application response: %w", err)
+	}
+
+	return &application, nil
+}
+
+// UpdateApplication updates an existing application
+func (c *Client) UpdateApplication(ctx context.Context, id string, req UpdateApplicationRequest) (*Application, error) {
+	tflog.Info(ctx, "Updating application", map[string]interface{}{
+		"id": id,
+	})
+
+	path := fmt.Sprintf("/applications/resources/applications/v1/%s", id)
+	resp, err := c.DoRequest(ctx, http.MethodPatch, path, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update application: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to update application with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	// Fetch the updated application
+	return c.GetApplicationByID(ctx, id)
+}
+
+// DeleteApplication deletes an application
+func (c *Client) DeleteApplication(ctx context.Context, id string) error {
+	tflog.Info(ctx, "Deleting application", map[string]interface{}{
+		"id": id,
+	})
+
+	path := fmt.Sprintf("/applications/resources/applications/v1/%s", id)
+	resp, err := c.DoRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return fmt.Errorf("failed to delete application: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to delete application with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	return nil
+}
+
+// ============================================================================
+// MCP Configuration Methods
+// ============================================================================
+
+// McpConfiguration represents MCP configuration for an app
+type McpConfiguration struct {
+	ID         string `json:"id"`
+	VendorID   string `json:"vendorId"`
+	AppID      string `json:"appId"`
+	BaseURL    string `json:"baseUrl"`
+	APITimeout int    `json:"apiTimeout"`
+}
+
+// CreateOrUpdateMcpConfigurationRequest represents the request to create/update MCP config
+type CreateOrUpdateMcpConfigurationRequest struct {
+	AppID      string `json:"appId"`
+	BaseURL    string `json:"baseUrl"`
+	APITimeout int    `json:"apiTimeout"`
+}
+
+// CreateOrUpdateMcpConfiguration creates or updates MCP configuration
+func (c *Client) CreateOrUpdateMcpConfiguration(ctx context.Context, req CreateOrUpdateMcpConfigurationRequest) (*McpConfiguration, error) {
+	tflog.Info(ctx, "Creating/updating MCP configuration", map[string]interface{}{
+		"app_id":   req.AppID,
+		"base_url": req.BaseURL,
+	})
+
+	resp, err := c.DoRequest(ctx, http.MethodPost, "/app-integrations/resources/app-mcp-configurations/v1", req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create/update MCP configuration: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to create/update MCP configuration with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var config McpConfiguration
+	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
+		return nil, fmt.Errorf("failed to decode MCP configuration response: %w", err)
+	}
+
+	return &config, nil
+}
+
+// GetMcpConfiguration retrieves MCP configuration for an app
+func (c *Client) GetMcpConfiguration(ctx context.Context, appID string) (*McpConfiguration, error) {
+	tflog.Info(ctx, "Fetching MCP configuration", map[string]interface{}{
+		"app_id": appID,
+	})
+
+	path := fmt.Sprintf("/app-integrations/resources/app-mcp-configurations/v1?appId=%s", appID)
+	resp, err := c.DoRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get MCP configuration: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get MCP configuration with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var config McpConfiguration
+	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
+		return nil, fmt.Errorf("failed to decode MCP configuration response: %w", err)
+	}
+
+	return &config, nil
+}
+
+// ============================================================================
+// Source CRUD Methods (additional methods)
+// ============================================================================
+
+// UpdateSourceRequest represents the request to update a source
+type UpdateSourceRequest struct {
+	AppID      string `json:"appId"`
+	Name       string `json:"name,omitempty"`
+	Type       string `json:"type,omitempty"`
+	SourceURL  string `json:"sourceUrl,omitempty"`
+	APITimeout int    `json:"apiTimeout,omitempty"`
+	Enabled    *bool  `json:"enabled,omitempty"`
+}
+
+// GetSourceByID retrieves a source by ID
+func (c *Client) GetSourceByID(ctx context.Context, appID, sourceID string) (*Source, error) {
+	sources, err := c.GetSources(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, src := range sources {
+		if src.ID == sourceID {
+			return &src, nil
+		}
+	}
+
+	return nil, nil
+}
+
+// UpdateSource updates an existing source
+func (c *Client) UpdateSource(ctx context.Context, sourceID string, req UpdateSourceRequest) (*Source, error) {
+	tflog.Info(ctx, "Updating source", map[string]interface{}{
+		"id": sourceID,
+	})
+
+	path := fmt.Sprintf("/app-integrations/resources/app-mcp-configuration-sources/v1/%s", sourceID)
+	resp, err := c.DoRequest(ctx, http.MethodPatch, path, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update source: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to update source with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var source Source
+	if err := json.NewDecoder(resp.Body).Decode(&source); err != nil {
+		return nil, fmt.Errorf("failed to decode source response: %w", err)
+	}
+
+	return &source, nil
+}
+
+// DeleteSource deletes a source
+func (c *Client) DeleteSource(ctx context.Context, appID, sourceID string) error {
+	tflog.Info(ctx, "Deleting source", map[string]interface{}{
+		"id": sourceID,
+	})
+
+	path := fmt.Sprintf("/app-integrations/resources/app-mcp-configuration-sources/v1/%s?appId=%s", sourceID, appID)
+	resp, err := c.DoRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return fmt.Errorf("failed to delete source: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to delete source with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	return nil
+}
+
+// ============================================================================
+// Policy Types and Methods
+// ============================================================================
+
+// PolicyCondition represents a condition in policy targeting
+type PolicyCondition struct {
+	Attribute string                 `json:"attribute"`
+	Negate    bool                   `json:"negate"`
+	Op        string                 `json:"op"`
+	Value     map[string]interface{} `json:"value"`
+}
+
+// PolicyIfBlock represents the if block in targeting
+type PolicyIfBlock struct {
+	Conditions []PolicyCondition `json:"conditions"`
+}
+
+// PolicyThenBlock represents the then block in targeting
+type PolicyThenBlock struct {
+	Result         string `json:"result"`
+	ApprovalFlowID string `json:"approvalFlowId,omitempty"`
+}
+
+// PolicyTargeting represents policy targeting rules
+type PolicyTargeting struct {
+	If   PolicyIfBlock   `json:"if"`
+	Then PolicyThenBlock `json:"then"`
+}
+
+// MaskingPolicyConfiguration represents the configuration for data masking
+type MaskingPolicyConfiguration struct {
+	CreditCard      bool `json:"creditCard,omitempty"`
+	EmailAddress    bool `json:"emailAddress,omitempty"`
+	PhoneNumber     bool `json:"phoneNumber,omitempty"`
+	IpAddress       bool `json:"ipAddress,omitempty"`
+	UsSsn           bool `json:"usSsn,omitempty"`
+	UsDriverLicense bool `json:"usDriverLicense,omitempty"`
+	UsPassport      bool `json:"usPassport,omitempty"`
+	UsItin          bool `json:"usItin,omitempty"`
+	UsBankNumber    bool `json:"usBankNumber,omitempty"`
+	IbanCode        bool `json:"ibanCode,omitempty"`
+	SwiftCode       bool `json:"swiftCode,omitempty"`
+	BitcoinAddress  bool `json:"bitcoinAddress,omitempty"`
+	EthereumAddress bool `json:"ethereumAddress,omitempty"`
+	CvvCvc          bool `json:"cvvCvc,omitempty"`
+	Url             bool `json:"url,omitempty"`
+}
+
+// Policy represents a generic policy response
+type Policy struct {
+	ID                  string                      `json:"id"`
+	VendorID            string                      `json:"vendorId"`
+	Name                string                      `json:"name"`
+	Description         string                      `json:"description,omitempty"`
+	Type                string                      `json:"type"`
+	Enabled             bool                        `json:"enabled"`
+	AppIDs              []string                    `json:"appIds,omitempty"`
+	TenantID            string                      `json:"tenantId,omitempty"`
+	InternalToolIDs     []string                    `json:"internalToolIds,omitempty"`
+	Targeting           *PolicyTargeting            `json:"targeting,omitempty"`
+	Keys                []string                    `json:"keys,omitempty"`
+	PolicyConfiguration *MaskingPolicyConfiguration `json:"policyConfiguration,omitempty"`
+	Metadata            map[string]interface{}      `json:"metadata,omitempty"`
+	CreatedAt           string                      `json:"createdAt,omitempty"`
+	UpdatedAt           string                      `json:"updatedAt,omitempty"`
+}
+
+// CreateConditionalPolicyRequest represents the request to create a conditional policy
+type CreateConditionalPolicyRequest struct {
+	Name            string                 `json:"name"`
+	Description     string                 `json:"description,omitempty"`
+	Enabled         bool                   `json:"enabled"`
+	AppIDs          []string               `json:"appIds,omitempty"`
+	TenantID        string                 `json:"tenantId,omitempty"`
+	InternalToolIDs []string               `json:"internalToolIds"`
+	Targeting       *PolicyTargeting       `json:"targeting,omitempty"`
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// CreateRbacPolicyRequest represents the request to create an RBAC policy
+type CreateRbacPolicyRequest struct {
+	Name            string   `json:"name"`
+	Description     string   `json:"description,omitempty"`
+	Enabled         bool     `json:"enabled"`
+	AppIDs          []string `json:"appIds,omitempty"`
+	TenantID        string   `json:"tenantId,omitempty"`
+	InternalToolIDs []string `json:"internalToolIds"`
+	Type            string   `json:"type"` // "RBAC_ROLES" or "RBAC_PERMISSIONS"
+	Keys            []string `json:"keys"`
+}
+
+// CreateMaskingPolicyRequest represents the request to create a masking policy
+type CreateMaskingPolicyRequest struct {
+	Name                string                      `json:"name"`
+	Description         string                      `json:"description,omitempty"`
+	Enabled             bool                        `json:"enabled"`
+	AppIDs              []string                    `json:"appIds,omitempty"`
+	TenantID            string                      `json:"tenantId,omitempty"`
+	InternalToolIDs     []string                    `json:"internalToolIds"`
+	Targeting           *PolicyTargeting            `json:"targeting,omitempty"`
+	PolicyConfiguration *MaskingPolicyConfiguration `json:"policyConfiguration"`
+	Metadata            map[string]interface{}      `json:"metadata,omitempty"`
+}
+
+// UpdateConditionalPolicyRequest represents the request to update a conditional policy
+type UpdateConditionalPolicyRequest struct {
+	Name            string                 `json:"name,omitempty"`
+	Description     string                 `json:"description,omitempty"`
+	Enabled         *bool                  `json:"enabled,omitempty"`
+	AppIDs          []string               `json:"appIds,omitempty"`
+	TenantID        string                 `json:"tenantId,omitempty"`
+	InternalToolIDs []string               `json:"internalToolIds,omitempty"`
+	Targeting       *PolicyTargeting       `json:"targeting,omitempty"`
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// UpdateRbacPolicyRequest represents the request to update an RBAC policy
+type UpdateRbacPolicyRequest struct {
+	Name            string   `json:"name,omitempty"`
+	Description     string   `json:"description,omitempty"`
+	Enabled         *bool    `json:"enabled,omitempty"`
+	AppIDs          []string `json:"appIds,omitempty"`
+	TenantID        string   `json:"tenantId,omitempty"`
+	InternalToolIDs []string `json:"internalToolIds,omitempty"`
+	Keys            []string `json:"keys,omitempty"`
+}
+
+// UpdateMaskingPolicyRequest represents the request to update a masking policy
+type UpdateMaskingPolicyRequest struct {
+	Name                string                      `json:"name,omitempty"`
+	Description         string                      `json:"description,omitempty"`
+	Enabled             *bool                       `json:"enabled,omitempty"`
+	AppIDs              []string                    `json:"appIds,omitempty"`
+	TenantID            string                      `json:"tenantId,omitempty"`
+	InternalToolIDs     []string                    `json:"internalToolIds,omitempty"`
+	Targeting           *PolicyTargeting            `json:"targeting,omitempty"`
+	PolicyConfiguration *MaskingPolicyConfiguration `json:"policyConfiguration,omitempty"`
+	Metadata            map[string]interface{}      `json:"metadata,omitempty"`
+}
+
+// ============================================================================
+// Conditional Policy CRUD
+// ============================================================================
+
+// CreateConditionalPolicy creates a new conditional policy
+func (c *Client) CreateConditionalPolicy(ctx context.Context, req CreateConditionalPolicyRequest) (*Policy, error) {
+	tflog.Info(ctx, "Creating conditional policy", map[string]interface{}{
+		"name": req.Name,
+	})
+
+	resp, err := c.DoRequest(ctx, http.MethodPost, "/app-integrations/resources/policies/v1", req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create conditional policy: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to create conditional policy with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var result struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode policy response: %w", err)
+	}
+
+	// Fetch the full policy
+	return c.GetConditionalPolicy(ctx, result.ID)
+}
+
+// GetConditionalPolicy retrieves a conditional policy by ID
+func (c *Client) GetConditionalPolicy(ctx context.Context, id string) (*Policy, error) {
+	tflog.Info(ctx, "Fetching conditional policy", map[string]interface{}{
+		"id": id,
+	})
+
+	path := fmt.Sprintf("/app-integrations/resources/policies/v1/%s", id)
+	resp, err := c.DoRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get conditional policy: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get conditional policy with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var policy Policy
+	if err := json.NewDecoder(resp.Body).Decode(&policy); err != nil {
+		return nil, fmt.Errorf("failed to decode policy response: %w", err)
+	}
+
+	return &policy, nil
+}
+
+// UpdateConditionalPolicy updates an existing conditional policy
+func (c *Client) UpdateConditionalPolicy(ctx context.Context, id string, req UpdateConditionalPolicyRequest) (*Policy, error) {
+	tflog.Info(ctx, "Updating conditional policy", map[string]interface{}{
+		"id": id,
+	})
+
+	path := fmt.Sprintf("/app-integrations/resources/policies/v1/%s", id)
+	resp, err := c.DoRequest(ctx, http.MethodPatch, path, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update conditional policy: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to update conditional policy with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	// Fetch the updated policy
+	return c.GetConditionalPolicy(ctx, id)
+}
+
+// DeletePolicy deletes any policy by ID (shared across all policy types)
+func (c *Client) DeletePolicy(ctx context.Context, id string) error {
+	tflog.Info(ctx, "Deleting policy", map[string]interface{}{
+		"id": id,
+	})
+
+	path := fmt.Sprintf("/app-integrations/resources/policies/v1/%s", id)
+	resp, err := c.DoRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return fmt.Errorf("failed to delete policy: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to delete policy with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	return nil
+}
+
+// ============================================================================
+// RBAC Policy CRUD
+// ============================================================================
+
+// CreateRbacPolicy creates a new RBAC policy
+func (c *Client) CreateRbacPolicy(ctx context.Context, req CreateRbacPolicyRequest) (*Policy, error) {
+	tflog.Info(ctx, "Creating RBAC policy", map[string]interface{}{
+		"name": req.Name,
+		"type": req.Type,
+	})
+
+	resp, err := c.DoRequest(ctx, http.MethodPost, "/app-integrations/resources/policies/v1/rbac", req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create RBAC policy: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to create RBAC policy with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var result struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode policy response: %w", err)
+	}
+
+	// Fetch the full policy
+	return c.GetRbacPolicy(ctx, result.ID)
+}
+
+// GetRbacPolicy retrieves an RBAC policy by ID
+func (c *Client) GetRbacPolicy(ctx context.Context, id string) (*Policy, error) {
+	tflog.Info(ctx, "Fetching RBAC policy", map[string]interface{}{
+		"id": id,
+	})
+
+	path := fmt.Sprintf("/app-integrations/resources/policies/v1/rbac/%s", id)
+	resp, err := c.DoRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get RBAC policy: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get RBAC policy with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var policy Policy
+	if err := json.NewDecoder(resp.Body).Decode(&policy); err != nil {
+		return nil, fmt.Errorf("failed to decode policy response: %w", err)
+	}
+
+	return &policy, nil
+}
+
+// UpdateRbacPolicy updates an existing RBAC policy
+func (c *Client) UpdateRbacPolicy(ctx context.Context, id string, req UpdateRbacPolicyRequest) (*Policy, error) {
+	tflog.Info(ctx, "Updating RBAC policy", map[string]interface{}{
+		"id": id,
+	})
+
+	path := fmt.Sprintf("/app-integrations/resources/policies/v1/rbac/%s", id)
+	resp, err := c.DoRequest(ctx, http.MethodPatch, path, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update RBAC policy: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to update RBAC policy with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	// Fetch the updated policy
+	return c.GetRbacPolicy(ctx, id)
+}
+
+// ============================================================================
+// Masking Policy CRUD
+// ============================================================================
+
+// CreateMaskingPolicy creates a new masking policy
+func (c *Client) CreateMaskingPolicy(ctx context.Context, req CreateMaskingPolicyRequest) (*Policy, error) {
+	tflog.Info(ctx, "Creating masking policy", map[string]interface{}{
+		"name": req.Name,
+	})
+
+	resp, err := c.DoRequest(ctx, http.MethodPost, "/app-integrations/resources/policies/v1/masking", req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create masking policy: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to create masking policy with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var result struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode policy response: %w", err)
+	}
+
+	// Fetch the full policy
+	return c.GetMaskingPolicy(ctx, result.ID)
+}
+
+// GetMaskingPolicy retrieves a masking policy by ID
+func (c *Client) GetMaskingPolicy(ctx context.Context, id string) (*Policy, error) {
+	tflog.Info(ctx, "Fetching masking policy", map[string]interface{}{
+		"id": id,
+	})
+
+	path := fmt.Sprintf("/app-integrations/resources/policies/v1/masking/%s", id)
+	resp, err := c.DoRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get masking policy: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get masking policy with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var policy Policy
+	if err := json.NewDecoder(resp.Body).Decode(&policy); err != nil {
+		return nil, fmt.Errorf("failed to decode policy response: %w", err)
+	}
+
+	return &policy, nil
+}
+
+// UpdateMaskingPolicy updates an existing masking policy
+func (c *Client) UpdateMaskingPolicy(ctx context.Context, id string, req UpdateMaskingPolicyRequest) (*Policy, error) {
+	tflog.Info(ctx, "Updating masking policy", map[string]interface{}{
+		"id": id,
+	})
+
+	path := fmt.Sprintf("/app-integrations/resources/policies/v1/masking/%s", id)
+	resp, err := c.DoRequest(ctx, http.MethodPatch, path, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update masking policy: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to update masking policy with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	// Fetch the updated policy
+	return c.GetMaskingPolicy(ctx, id)
+}
+
+// ============================================================================
+// Tools Methods (additional)
+// ============================================================================
+
+// DeleteToolsBySource deletes all tools associated with a source
+func (c *Client) DeleteToolsBySource(ctx context.Context, appID, sourceID string) error {
+	tflog.Info(ctx, "Deleting tools by source", map[string]interface{}{
+		"app_id":    appID,
+		"source_id": sourceID,
+	})
+
+	// Get tools for this source and delete them
+	path := fmt.Sprintf("/app-integrations/resources/internal-tools/v1?appId=%s&sourceId=%s", appID, sourceID)
+	resp, err := c.DoRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return fmt.Errorf("failed to get tools: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to get tools with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var result struct {
+		Items []InternalTool `json:"items"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return fmt.Errorf("failed to decode tools response: %w", err)
+	}
+
+	// Delete each tool
+	for _, tool := range result.Items {
+		if err := c.DeleteTool(ctx, appID, tool.ID); err != nil {
+			tflog.Warn(ctx, "Failed to delete tool", map[string]interface{}{
+				"tool_id": tool.ID,
+				"error":   err.Error(),
+			})
+		}
+	}
+
+	return nil
+}
+
+// DeleteTool deletes a single tool
+func (c *Client) DeleteTool(ctx context.Context, appID, toolID string) error {
+	path := fmt.Sprintf("/app-integrations/resources/internal-tools/v1/%s?appId=%s", toolID, appID)
+	resp, err := c.DoRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return fmt.Errorf("failed to delete tool: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to delete tool with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	return nil
+}

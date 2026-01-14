@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/frontegg/terraform-provider-frontegg/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -40,21 +39,10 @@ type FronteggProvider struct {
 
 // FronteggProviderModel describes the provider data model.
 type FronteggProviderModel struct {
-	Region          types.String  `tfsdk:"region"`
-	BaseURL         types.String  `tfsdk:"base_url"`
-	ClientID        types.String  `tfsdk:"client_id"`
-	Secret          types.String  `tfsdk:"secret"`
-	ApplicationName types.String  `tfsdk:"application_name"`
-	Sources         []SourceModel `tfsdk:"sources"`
-}
-
-// SourceModel describes a source configuration
-type SourceModel struct {
-	Name       types.String `tfsdk:"name"`
-	Type       types.String `tfsdk:"type"`
-	SourceURL  types.String `tfsdk:"source_url"`
-	APITimeout types.Int64  `tfsdk:"api_timeout"`
-	SchemaFile types.String `tfsdk:"schema_file"`
+	Region   types.String `tfsdk:"region"`
+	BaseURL  types.String `tfsdk:"base_url"`
+	ClientID types.String `tfsdk:"client_id"`
+	Secret   types.String `tfsdk:"secret"`
 }
 
 // New creates a new provider factory function
@@ -73,7 +61,7 @@ func (p *FronteggProvider) Metadata(ctx context.Context, req provider.MetadataRe
 
 func (p *FronteggProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Terraform provider for managing Frontegg resources.",
+		Description: "Terraform provider for managing Frontegg AgentLink resources including applications, MCP configurations, sources, tools, and policies.",
 		Attributes: map[string]schema.Attribute{
 			"region": schema.StringAttribute{
 				Description: "The Frontegg region. Valid values: stg, eu (default), us, au, ca, uk. Can also be set via FRONTEGG_REGION environment variable.",
@@ -91,38 +79,6 @@ func (p *FronteggProvider) Schema(ctx context.Context, req provider.SchemaReques
 				Description: "The secret for Frontegg API authentication. Can also be set via FRONTEGG_SECRET environment variable.",
 				Optional:    true,
 				Sensitive:   true,
-			},
-			"application_name": schema.StringAttribute{
-				Description: "The name of the application as it will appear in the Frontegg Portal. If an application with this name does not exist, it will be created automatically. Can also be set via FRONTEGG_APPLICATION_NAME environment variable.",
-				Optional:    true,
-			},
-			"sources": schema.ListNestedAttribute{
-				Description: "List of MCP configuration sources. Each source will be created if it doesn't exist.",
-				Optional:    true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"name": schema.StringAttribute{
-							Description: "Name of the source.",
-							Required:    true,
-						},
-						"type": schema.StringAttribute{
-							Description: "Type of the source. Valid values: REST, GRAPHQL, MOCK, MCP_PROXY, FRONTEGG, CUSTOM_INTEGRATION.",
-							Required:    true,
-						},
-						"source_url": schema.StringAttribute{
-							Description: "URL of the source (must be HTTPS).",
-							Required:    true,
-						},
-						"api_timeout": schema.Int64Attribute{
-							Description: "API timeout in milliseconds (500-5000). Defaults to 3000.",
-							Optional:    true,
-						},
-						"schema_file": schema.StringAttribute{
-							Description: "Path to the schema file to import. For REST sources, this should be an OpenAPI specification (JSON/YAML). For GRAPHQL sources, this should be a GraphQL schema file.",
-							Optional:    true,
-						},
-					},
-				},
 			},
 		},
 	}
@@ -162,7 +118,6 @@ func (p *FronteggProvider) Configure(ctx context.Context, req provider.Configure
 	baseURL := os.Getenv("FRONTEGG_BASE_URL")
 	clientID := os.Getenv("FRONTEGG_CLIENT_ID")
 	secret := os.Getenv("FRONTEGG_SECRET")
-	applicationName := os.Getenv("FRONTEGG_APPLICATION_NAME")
 
 	// Override with config values if provided
 	if !config.Region.IsNull() {
@@ -176,9 +131,6 @@ func (p *FronteggProvider) Configure(ctx context.Context, req provider.Configure
 	}
 	if !config.Secret.IsNull() {
 		secret = config.Secret.ValueString()
-	}
-	if !config.ApplicationName.IsNull() {
-		applicationName = config.ApplicationName.ValueString()
 	}
 
 	// Resolve base URL: base_url takes precedence over region
@@ -234,87 +186,6 @@ func (p *FronteggProvider) Configure(ctx context.Context, req provider.Configure
 		return
 	}
 
-	// Find or create application if application_name is provided
-	if applicationName != "" {
-		app, err := c.FindOrCreateApplication(ctx, applicationName, "https://localhost", "https://localhost")
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Unable to Find or Create Application",
-				fmt.Sprintf("Failed to find or create application '%s': %s", applicationName, err.Error()),
-			)
-			return
-		}
-		_ = app // Application ID is stored in the client
-	}
-
-	// Find or create sources if provided
-	if len(config.Sources) > 0 {
-		if c.ApplicationID == "" {
-			resp.Diagnostics.AddError(
-				"Application Required for Sources",
-				"An application_name must be configured to create sources.",
-			)
-			return
-		}
-
-		for _, srcConfig := range config.Sources {
-			apiTimeout := int64(3000) // default
-			if !srcConfig.APITimeout.IsNull() {
-				apiTimeout = srcConfig.APITimeout.ValueInt64()
-			}
-
-			source, err := c.FindOrCreateSource(
-				ctx,
-				c.ApplicationID,
-				srcConfig.Name.ValueString(),
-				srcConfig.Type.ValueString(),
-				srcConfig.SourceURL.ValueString(),
-				int(apiTimeout),
-			)
-			if err != nil {
-				resp.Diagnostics.AddError(
-					"Unable to Find or Create Source",
-					fmt.Sprintf("Failed to find or create source '%s': %s", srcConfig.Name.ValueString(), err.Error()),
-				)
-				return
-			}
-
-			// Import schema if provided for REST or GRAPHQL sources
-			if !srcConfig.SchemaFile.IsNull() && srcConfig.SchemaFile.ValueString() != "" {
-				sourceType := srcConfig.Type.ValueString()
-				if sourceType != "REST" && sourceType != "GRAPHQL" {
-					resp.Diagnostics.AddError(
-						"Invalid Source Type for Schema Import",
-						fmt.Sprintf("Schema import is only supported for REST and GRAPHQL sources, got '%s'", sourceType),
-					)
-					return
-				}
-
-				schemaFilePath := srcConfig.SchemaFile.ValueString()
-				schemaContent, err := os.ReadFile(schemaFilePath)
-				if err != nil {
-					resp.Diagnostics.AddError(
-						"Unable to Read Schema File",
-						fmt.Sprintf("Failed to read schema file '%s': %s", schemaFilePath, err.Error()),
-					)
-					return
-				}
-
-				// Extract filename from path for the import
-				filename := filepath.Base(schemaFilePath)
-
-				err = c.ImportAndUpsertSchema(ctx, c.ApplicationID, source.ID, sourceType, schemaContent, filename)
-				if err != nil {
-					resp.Diagnostics.AddError(
-						"Unable to Import Schema",
-						fmt.Sprintf("Failed to import schema for source '%s': %s", srcConfig.Name.ValueString(), err.Error()),
-					)
-					return
-				}
-			}
-		}
-	}
-
 	// Make the client available to data sources and resources
 	resp.DataSourceData = c
 	resp.ResourceData = c
@@ -322,7 +193,13 @@ func (p *FronteggProvider) Configure(ctx context.Context, req provider.Configure
 
 func (p *FronteggProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		// Resources will be added here as they are implemented
+		NewApplicationResource,
+		NewMcpConfigurationResource,
+		NewSourceResource,
+		NewToolsImportResource,
+		NewConditionalPolicyResource,
+		NewRbacPolicyResource,
+		NewMaskingPolicyResource,
 	}
 }
 
