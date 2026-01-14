@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"strings"
 
 	"github.com/frontegg/terraform-provider-frontegg/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -231,5 +232,16 @@ func (r *SourceResource) Delete(ctx context.Context, req resource.DeleteRequest,
 }
 
 func (r *SourceResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	// Import format: application_id:source_id
+	parts := strings.Split(req.ID, ":")
+	if len(parts) != 2 {
+		resp.Diagnostics.AddError(
+			"Invalid Import ID",
+			"Import ID must be in the format 'application_id:source_id'",
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("application_id"), parts[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), parts[1])...)
 }

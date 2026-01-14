@@ -39,28 +39,40 @@ type AuthResponse struct {
 
 // Application represents a Frontegg application
 type Application struct {
-	ID            string `json:"id"`
-	VendorID      string `json:"vendorId"`
-	Name          string `json:"name"`
-	AppURL        string `json:"appURL"`
-	LoginURL      string `json:"loginURL"`
-	LogoURL       string `json:"logoURL"`
-	AccessType    string `json:"accessType"`
-	IsDefault     bool   `json:"isDefault"`
-	IsActive      bool   `json:"isActive"`
-	Type          string `json:"type"`
-	FrontendStack string `json:"frontendStack"`
-	Description   string `json:"description"`
-	CreatedAt     string `json:"createdAt"`
-	UpdatedAt     string `json:"updatedAt"`
+	ID                    string                 `json:"id"`
+	VendorID              string                 `json:"vendorId"`
+	Name                  string                 `json:"name"`
+	AppURL                string                 `json:"appURL"`
+	LoginURL              string                 `json:"loginURL"`
+	LogoURL               string                 `json:"logoURL"`
+	AccessType            string                 `json:"accessType"`
+	IsDefault             bool                   `json:"isDefault"`
+	IsActive              bool                   `json:"isActive"`
+	Type                  string                 `json:"type"`
+	FrontendStack         string                 `json:"frontendStack"`
+	Description           string                 `json:"description"`
+	CreatedAt             string                 `json:"createdAt"`
+	UpdatedAt             string                 `json:"updatedAt"`
+	IntegrationFinishedAt string                 `json:"integrationFinishedAt,omitempty"`
+	Metadata              map[string]interface{} `json:"metadata,omitempty"`
+	AppHost               string                 `json:"appHost,omitempty"`
+	AllowDcr              bool                   `json:"allowDcr"`
 }
 
 // CreateApplicationRequest represents the request to create an application
 type CreateApplicationRequest struct {
-	Name     string `json:"name"`
-	AppURL   string `json:"appURL"`
-	LoginURL string `json:"loginURL"`
-	Type     string `json:"type,omitempty"`
+	Name          string                 `json:"name"`
+	AppURL        string                 `json:"appURL"`
+	LoginURL      string                 `json:"loginURL"`
+	LogoURL       string                 `json:"logoURL,omitempty"`
+	AccessType    string                 `json:"accessType,omitempty"`
+	IsDefault     *bool                  `json:"isDefault,omitempty"`
+	IsActive      *bool                  `json:"isActive,omitempty"`
+	Type          string                 `json:"type,omitempty"`
+	FrontendStack string                 `json:"frontendStack,omitempty"`
+	Description   string                 `json:"description,omitempty"`
+	Metadata      map[string]interface{} `json:"metadata,omitempty"`
+	AllowDcr      *bool                  `json:"allowDcr,omitempty"`
 }
 
 // Source represents a Frontegg MCP configuration source

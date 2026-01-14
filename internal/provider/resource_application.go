@@ -29,19 +29,20 @@ type ApplicationResource struct {
 
 // ApplicationResourceModel describes the resource data model.
 type ApplicationResourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	VendorID    types.String `tfsdk:"vendor_id"`
-	Name        types.String `tfsdk:"name"`
-	AppURL      types.String `tfsdk:"app_url"`
-	LoginURL    types.String `tfsdk:"login_url"`
-	LogoURL     types.String `tfsdk:"logo_url"`
-	AccessType  types.String `tfsdk:"access_type"`
-	IsDefault   types.Bool   `tfsdk:"is_default"`
-	IsActive    types.Bool   `tfsdk:"is_active"`
-	Type        types.String `tfsdk:"type"`
-	Description types.String `tfsdk:"description"`
-	AllowDcr    types.Bool   `tfsdk:"allow_dcr"`
-	AppHost     types.String `tfsdk:"app_host"`
+	ID            types.String `tfsdk:"id"`
+	VendorID      types.String `tfsdk:"vendor_id"`
+	Name          types.String `tfsdk:"name"`
+	AppURL        types.String `tfsdk:"app_url"`
+	LoginURL      types.String `tfsdk:"login_url"`
+	LogoURL       types.String `tfsdk:"logo_url"`
+	AccessType    types.String `tfsdk:"access_type"`
+	IsDefault     types.Bool   `tfsdk:"is_default"`
+	IsActive      types.Bool   `tfsdk:"is_active"`
+	Type          types.String `tfsdk:"type"`
+	FrontendStack types.String `tfsdk:"frontend_stack"`
+	Description   types.String `tfsdk:"description"`
+	AllowDcr      types.Bool   `tfsdk:"allow_dcr"`
+	AppHost       types.String `tfsdk:"app_host"`
 }
 
 func (r *ApplicationResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -108,6 +109,12 @@ func (r *ApplicationResource) Schema(ctx context.Context, req resource.SchemaReq
 				Computed:    true,
 				Default:     stringdefault.StaticString("agent"),
 			},
+			"frontend_stack": schema.StringAttribute{
+				Description: "The frontend stack. Valid values: react, angular, vue, nextjs, other.",
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString("react"),
+			},
 			"description": schema.StringAttribute{
 				Description: "The application description.",
 				Optional:    true,
@@ -118,14 +125,11 @@ func (r *ApplicationResource) Schema(ctx context.Context, req resource.SchemaReq
 				Description: "Whether to allow Dynamic Client Registration (DCR).",
 				Optional:    true,
 				Computed:    true,
-				Default:     booldefault.StaticBool(true),
+				Default:     booldefault.StaticBool(false),
 			},
 			"app_host": schema.StringAttribute{
 				Description: "The application host (computed by Frontegg).",
 				Computed:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 		},
 	}
@@ -156,11 +160,23 @@ func (r *ApplicationResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
+	// Create with all planned values
+	isDefault := data.IsDefault.ValueBool()
+	isActive := data.IsActive.ValueBool()
+	allowDcr := data.AllowDcr.ValueBool()
+
 	createReq := client.CreateApplicationRequest{
-		Name:     data.Name.ValueString(),
-		AppURL:   data.AppURL.ValueString(),
-		LoginURL: data.LoginURL.ValueString(),
-		Type:     data.Type.ValueString(),
+		Name:          data.Name.ValueString(),
+		AppURL:        data.AppURL.ValueString(),
+		LoginURL:      data.LoginURL.ValueString(),
+		LogoURL:       data.LogoURL.ValueString(),
+		AccessType:    data.AccessType.ValueString(),
+		IsDefault:     &isDefault,
+		IsActive:      &isActive,
+		Type:          data.Type.ValueString(),
+		FrontendStack: data.FrontendStack.ValueString(),
+		Description:   data.Description.ValueString(),
+		AllowDcr:      &allowDcr,
 	}
 
 	app, err := r.client.CreateApplication(ctx, createReq)
@@ -169,60 +185,8 @@ func (r *ApplicationResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	// Update with additional fields if specified
-	updateReq := client.UpdateApplicationRequest{}
-	needsUpdate := false
-
-	if !data.LogoURL.IsNull() && data.LogoURL.ValueString() != "" {
-		updateReq.LogoURL = data.LogoURL.ValueString()
-		needsUpdate = true
-	}
-	if !data.AccessType.IsNull() && data.AccessType.ValueString() != "FREE_ACCESS" {
-		updateReq.AccessType = data.AccessType.ValueString()
-		needsUpdate = true
-	}
-	if !data.Description.IsNull() && data.Description.ValueString() != "" {
-		updateReq.Description = data.Description.ValueString()
-		needsUpdate = true
-	}
-	if !data.IsDefault.IsNull() && data.IsDefault.ValueBool() {
-		isDefault := data.IsDefault.ValueBool()
-		updateReq.IsDefault = &isDefault
-		needsUpdate = true
-	}
-	if !data.IsActive.IsNull() && !data.IsActive.ValueBool() {
-		isActive := data.IsActive.ValueBool()
-		updateReq.IsActive = &isActive
-		needsUpdate = true
-	}
-	if !data.AllowDcr.IsNull() {
-		allowDcr := data.AllowDcr.ValueBool()
-		updateReq.AllowDcr = &allowDcr
-		needsUpdate = true
-	}
-
-	if needsUpdate {
-		app, err = r.client.UpdateApplication(ctx, app.ID, updateReq)
-		if err != nil {
-			resp.Diagnostics.AddError("Client Error", "Unable to update application after creation: "+err.Error())
-			return
-		}
-	}
-
 	// Map response to model
-	data.ID = types.StringValue(app.ID)
-	data.VendorID = types.StringValue(app.VendorID)
-	data.Name = types.StringValue(app.Name)
-	data.AppURL = types.StringValue(app.AppURL)
-	data.LoginURL = types.StringValue(app.LoginURL)
-	data.LogoURL = types.StringValue(app.LogoURL)
-	data.AccessType = types.StringValue(app.AccessType)
-	data.IsDefault = types.BoolValue(app.IsDefault)
-	data.IsActive = types.BoolValue(app.IsActive)
-	data.Type = types.StringValue(app.Type)
-	data.Description = types.StringValue(app.Description)
-	// Note: AllowDcr is not returned in the API response, keep the planned value
-	// data.AppHost would need to be fetched from the full response if available
+	r.mapApplicationToModel(app, &data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -247,17 +211,7 @@ func (r *ApplicationResource) Read(ctx context.Context, req resource.ReadRequest
 	}
 
 	// Map response to model
-	data.ID = types.StringValue(app.ID)
-	data.VendorID = types.StringValue(app.VendorID)
-	data.Name = types.StringValue(app.Name)
-	data.AppURL = types.StringValue(app.AppURL)
-	data.LoginURL = types.StringValue(app.LoginURL)
-	data.LogoURL = types.StringValue(app.LogoURL)
-	data.AccessType = types.StringValue(app.AccessType)
-	data.IsDefault = types.BoolValue(app.IsDefault)
-	data.IsActive = types.BoolValue(app.IsActive)
-	data.Type = types.StringValue(app.Type)
-	data.Description = types.StringValue(app.Description)
+	r.mapApplicationToModel(app, &data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -294,17 +248,7 @@ func (r *ApplicationResource) Update(ctx context.Context, req resource.UpdateReq
 	}
 
 	// Map response to model
-	data.ID = types.StringValue(app.ID)
-	data.VendorID = types.StringValue(app.VendorID)
-	data.Name = types.StringValue(app.Name)
-	data.AppURL = types.StringValue(app.AppURL)
-	data.LoginURL = types.StringValue(app.LoginURL)
-	data.LogoURL = types.StringValue(app.LogoURL)
-	data.AccessType = types.StringValue(app.AccessType)
-	data.IsDefault = types.BoolValue(app.IsDefault)
-	data.IsActive = types.BoolValue(app.IsActive)
-	data.Type = types.StringValue(app.Type)
-	data.Description = types.StringValue(app.Description)
+	r.mapApplicationToModel(app, &data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -326,4 +270,28 @@ func (r *ApplicationResource) Delete(ctx context.Context, req resource.DeleteReq
 
 func (r *ApplicationResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+// mapApplicationToModel maps an Application response to the resource model
+func (r *ApplicationResource) mapApplicationToModel(app *client.Application, data *ApplicationResourceModel) {
+	data.ID = types.StringValue(app.ID)
+	data.VendorID = types.StringValue(app.VendorID)
+	data.Name = types.StringValue(app.Name)
+	data.AppURL = types.StringValue(app.AppURL)
+	data.LoginURL = types.StringValue(app.LoginURL)
+	data.LogoURL = types.StringValue(app.LogoURL)
+	data.AccessType = types.StringValue(app.AccessType)
+	data.IsDefault = types.BoolValue(app.IsDefault)
+	data.IsActive = types.BoolValue(app.IsActive)
+	data.Type = types.StringValue(app.Type)
+	data.FrontendStack = types.StringValue(app.FrontendStack)
+	data.Description = types.StringValue(app.Description)
+	data.AllowDcr = types.BoolValue(app.AllowDcr)
+
+	// AppHost may be empty if not set by Frontegg
+	if app.AppHost != "" {
+		data.AppHost = types.StringValue(app.AppHost)
+	} else {
+		data.AppHost = types.StringValue("")
+	}
 }

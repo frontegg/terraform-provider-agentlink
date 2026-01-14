@@ -39,7 +39,7 @@ resource "agentlink_application" "main" {
   name        = "My MCP Server"
   app_url     = "https://app.example.com"
   login_url   = "https://app.example.com/oauth"
-  type        = "agent"
+  type        = "web"
   allow_dcr   = true
   description = "My MCP server application"
 }
