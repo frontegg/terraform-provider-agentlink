@@ -27,6 +27,8 @@ type Client struct {
 
 	// ApplicationID stores the resolved application ID
 	ApplicationID string
+	// ApplicationName stores the resolved application name
+	ApplicationName string
 }
 
 // AuthResponse represents the response from /auth/vendor
@@ -338,6 +340,7 @@ func (c *Client) FindOrCreateApplication(ctx context.Context, name, appURL, logi
 
 	if app != nil {
 		c.ApplicationID = app.ID
+		c.ApplicationName = app.Name
 		return app, nil
 	}
 
@@ -357,6 +360,7 @@ func (c *Client) FindOrCreateApplication(ctx context.Context, name, appURL, logi
 	}
 
 	c.ApplicationID = newApp.ID
+	c.ApplicationName = newApp.Name
 	return newApp, nil
 }
 
