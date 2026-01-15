@@ -133,3 +133,15 @@ output "source_id" {
   description = "The source ID"
   value       = agentlink_source.rest_api.id
 }
+
+# ============================================================================
+# Allowed Origins (CORS)
+# ============================================================================
+
+resource "agentlink_allowed_origins" "cors" {
+  allowed_origins = [
+    "http://localhost:3000",
+    "https://app.example.com",
+    "https://staging.example.com"
+  ]
+}

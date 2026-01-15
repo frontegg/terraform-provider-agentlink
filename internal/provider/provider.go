@@ -200,6 +200,7 @@ func (p *FronteggProvider) Resources(ctx context.Context) []func() resource.Reso
 		NewConditionalPolicyResource,
 		NewRbacPolicyResource,
 		NewMaskingPolicyResource,
+		NewAllowedOriginsResource,
 	}
 }
 

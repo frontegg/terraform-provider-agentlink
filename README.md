@@ -279,6 +279,32 @@ resource "agentlink_conditional_policy" "approval_required" {
 }
 ```
 
+### agentlink_allowed_origins
+
+Manages the allowed origins (CORS) configuration for the Frontegg vendor.
+
+```hcl
+resource "agentlink_allowed_origins" "cors" {
+  allowed_origins = [
+    "http://localhost:3000",
+    "https://app.example.com",
+    "https://staging.example.com"
+  ]
+}
+```
+
+#### Arguments
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `allowed_origins` | List of allowed origins for CORS | Yes |
+
+#### Attributes
+
+- `id` - The vendor ID
+
+---
+
 ## Data Sources
 
 ### agentlink_application
@@ -363,6 +389,14 @@ resource "agentlink_masking_policy" "pii" {
     email_address = true
     us_ssn        = true
   }
+}
+
+# Configure allowed origins (CORS)
+resource "agentlink_allowed_origins" "cors" {
+  allowed_origins = [
+    "http://localhost:3000",
+    "https://app.example.com"
+  ]
 }
 ```
 

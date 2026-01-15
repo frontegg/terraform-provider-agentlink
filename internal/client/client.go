@@ -1415,3 +1415,77 @@ func (c *Client) DeleteTool(ctx context.Context, appID, toolID string) error {
 
 	return nil
 }
+
+// VendorConfig represents the vendor configuration response
+type VendorConfig struct {
+	ID             string   `json:"id"`
+	Name           string   `json:"name"`
+	AllowedOrigins []string `json:"allowedOrigins"`
+}
+
+// UpdateAllowedOriginsRequest represents the request to update allowed origins
+type UpdateAllowedOriginsRequest struct {
+	AllowedOrigins []string `json:"allowedOrigins"`
+}
+
+// GetVendorConfig retrieves the vendor configuration
+func (c *Client) GetVendorConfig(ctx context.Context) (*VendorConfig, error) {
+	tflog.Info(ctx, "Fetching vendor configuration")
+
+	resp, err := c.DoRequest(ctx, http.MethodGet, "/vendors", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get vendor config: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get vendor config with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var config VendorConfig
+	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
+		return nil, fmt.Errorf("failed to decode vendor config response: %w", err)
+	}
+
+	tflog.Info(ctx, "Successfully fetched vendor configuration", map[string]interface{}{
+		"vendor_id":       config.ID,
+		"allowed_origins": config.AllowedOrigins,
+	})
+
+	return &config, nil
+}
+
+// UpdateAllowedOrigins updates the vendor's allowed origins
+func (c *Client) UpdateAllowedOrigins(ctx context.Context, origins []string) (*VendorConfig, error) {
+	tflog.Info(ctx, "Updating allowed origins", map[string]interface{}{
+		"origins": origins,
+	})
+
+	req := UpdateAllowedOriginsRequest{
+		AllowedOrigins: origins,
+	}
+
+	resp, err := c.DoRequest(ctx, http.MethodPut, "/vendors", req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update allowed origins: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to update allowed origins with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var config VendorConfig
+	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
+		return nil, fmt.Errorf("failed to decode vendor config response: %w", err)
+	}
+
+	tflog.Info(ctx, "Successfully updated allowed origins", map[string]interface{}{
+		"vendor_id":       config.ID,
+		"allowed_origins": config.AllowedOrigins,
+	})
+
+	return &config, nil
+}

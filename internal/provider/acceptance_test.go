@@ -345,3 +345,49 @@ output "source_id" {
 		},
 	})
 }
+
+// TestAccAllowedOriginsResource tests the allowed origins resource
+func TestAccAllowedOriginsResource(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactoriesAcc,
+		Steps: []resource.TestStep{
+			// Create and Read testing
+			{
+				Config: providerConfig() + `
+resource "agentlink_allowed_origins" "test" {
+  allowed_origins = [
+    "http://localhost:3000",
+    "https://app.example.com"
+  ]
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("agentlink_allowed_origins.test", "id"),
+					resource.TestCheckResourceAttr("agentlink_allowed_origins.test", "allowed_origins.#", "2"),
+				),
+			},
+			// Update testing - add more origins
+			{
+				Config: providerConfig() + `
+resource "agentlink_allowed_origins" "test" {
+  allowed_origins = [
+    "http://localhost:3000",
+    "https://app.example.com",
+    "https://staging.example.com"
+  ]
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("agentlink_allowed_origins.test", "allowed_origins.#", "3"),
+				),
+			},
+			// Import testing
+			{
+				ResourceName:      "agentlink_allowed_origins.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
