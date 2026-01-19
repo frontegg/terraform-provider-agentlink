@@ -20,10 +20,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Unshallow
+        run: git fetch --prune
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version-file: "go.mod"
           cache: true
 
       - name: Run tests
@@ -64,31 +67,11 @@ jobs:
           git push origin "${{ steps.next_version.outputs.new_version }}"
 
       - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
         id: import_gpg
-        run: |
-          # Create GPG directory
-          mkdir -p ~/.gnupg
-          chmod 700 ~/.gnupg
-
-          # Configure GPG for batch mode
-          echo "use-agent" >> ~/.gnupg/gpg.conf
-          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-
-          # Restart GPG agent
-          gpgconf --kill gpg-agent || true
-          gpg-agent --daemon --allow-loopback-pinentry || true
-
-          # Import the key
-          echo "${{ secrets.GPG_SIGNING_KEY }}" | gpg --batch --import
-
-          # Get the full key fingerprint (40 characters, required for import-ownertrust)
-          FINGERPRINT=$(gpg --list-secret-keys --with-colons | grep fpr | head -1 | cut -d':' -f10)
-          echo "fingerprint=$FINGERPRINT" >> $GITHUB_OUTPUT
-          echo "GPG Key fingerprint: $FINGERPRINT"
-
-          # Trust the key
-          echo "${FINGERPRINT}:6:" | gpg --import-ownertrust
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
@@ -97,6 +80,6 @@ jobs:
           version: '~> v2'
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          # GitHub sets this automatically
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
