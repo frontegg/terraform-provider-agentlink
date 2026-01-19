@@ -48,7 +48,7 @@ Add these secrets to your GitHub repository (`Settings > Secrets and variables >
 
 | Secret Name | Description |
 |-------------|-------------|
-| `GPG_PRIVATE_KEY` | The entire contents of `private-key.asc` |
+| `GPG_SIGNING_KEY` | The entire contents of `private-key.asc` |
 | `GPG_PASSPHRASE` | The passphrase for your GPG key |
 
 ### 3. Register with Terraform Registry
@@ -67,7 +67,7 @@ Configure these secrets in your GitHub repository:
 
 | Secret | Required | Description |
 |--------|----------|-------------|
-| `GPG_PRIVATE_KEY` | Yes | GPG private key for signing releases |
+| `GPG_SIGNING_KEY` | Yes | GPG private key for signing releases |
 | `GPG_PASSPHRASE` | Yes | Passphrase for the GPG key |
 | `GITHUB_TOKEN` | Auto | Automatically provided by GitHub Actions |
 
@@ -183,7 +183,7 @@ terraform init
 ### GPG Signature Errors
 
 1. Verify the GPG public key is uploaded to Terraform Registry
-2. Check that `GPG_PRIVATE_KEY` secret contains the full private key
+2. Check that `GPG_SIGNING_KEY` secret contains the full private key
 3. Ensure `GPG_PASSPHRASE` is correct
 
 ### Build Failures
@@ -198,7 +198,7 @@ Before publishing, ensure you have:
 
 - [ ] Renamed repository to `terraform-provider-agentlink`
 - [ ] Generated GPG key pair
-- [ ] Added `GPG_PRIVATE_KEY` to GitHub secrets
+- [ ] Added `GPG_SIGNING_KEY` to GitHub secrets
 - [ ] Added `GPG_PASSPHRASE` to GitHub secrets
 - [ ] Uploaded GPG public key to Terraform Registry
 - [ ] Registered provider with Terraform Registry
