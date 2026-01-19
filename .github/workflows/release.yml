@@ -82,13 +82,13 @@ jobs:
           # Import the key
           echo "${{ secrets.GPG_SIGNING_KEY }}" | gpg --batch --import
 
-          # Get the key fingerprint
-          FINGERPRINT=$(gpg --list-secret-keys --keyid-format=long | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
+          # Get the full 40-character fingerprint
+          FINGERPRINT=$(gpg --list-secret-keys --with-colons | grep fpr | head -1 | cut -d':' -f10)
           echo "fingerprint=$FINGERPRINT" >> $GITHUB_OUTPUT
           echo "GPG Key fingerprint: $FINGERPRINT"
 
-          # Trust the key
-          echo "$FINGERPRINT:6:" | gpg --import-ownertrust
+          # Trust the key using full fingerprint
+          echo "${FINGERPRINT}:6:" | gpg --import-ownertrust
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
