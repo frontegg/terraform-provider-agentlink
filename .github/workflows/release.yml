@@ -64,11 +64,31 @@ jobs:
           git push origin "${{ steps.next_version.outputs.new_version }}"
 
       - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v6
         id: import_gpg
-        with:
-          gpg_private_key: ${{ secrets.GPG_SIGNING_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          # Create GPG directory
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+
+          # Configure GPG for batch mode
+          echo "use-agent" >> ~/.gnupg/gpg.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+
+          # Restart GPG agent
+          gpgconf --kill gpg-agent || true
+          gpg-agent --daemon --allow-loopback-pinentry || true
+
+          # Import the key
+          echo "${{ secrets.GPG_SIGNING_KEY }}" | gpg --batch --import
+
+          # Get the key fingerprint
+          FINGERPRINT=$(gpg --list-secret-keys --keyid-format=long | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
+          echo "fingerprint=$FINGERPRINT" >> $GITHUB_OUTPUT
+          echo "GPG Key fingerprint: $FINGERPRINT"
+
+          # Trust the key
+          echo "$FINGERPRINT:6:" | gpg --import-ownertrust
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
@@ -79,3 +99,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
