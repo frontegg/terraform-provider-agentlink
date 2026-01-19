@@ -1,26 +1,36 @@
-# Binaries
-terraform-provider-agentlink
-*.exe
-
-# Go
-vendor/
-
 # Terraform
-.terraform/
 *.tfstate
 *.tfstate.*
-*.tfplan
+*.tfvars
+!*.tfvars.example
+.terraform/
 .terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Provider binary
+terraform-provider-agentlink
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
-
-# Test
-coverage.out

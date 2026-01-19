@@ -79,8 +79,12 @@ func (d *ApplicationDataSource) Read(ctx context.Context, req datasource.ReadReq
 		data.ID = types.StringNull()
 	}
 
-	// We don't have the name stored, set it to unknown for now
-	data.Name = types.StringNull()
+	// Return the application name from the client
+	if d.client.ApplicationName != "" {
+		data.Name = types.StringValue(d.client.ApplicationName)
+	} else {
+		data.Name = types.StringNull()
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
