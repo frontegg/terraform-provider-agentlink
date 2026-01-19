@@ -1,0 +1,45 @@
+# Terraform Provider release workflow
+# This workflow creates a release when a version tag is pushed
+# To publish: create and push a tag like v1.0.0
+#
+# For automated releases on PR merge to master, you can:
+# 1. Use a separate workflow that creates tags on merge, or
+# 2. Manually create tags after merging
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - 'v*-beta*'
+      - 'v*-alpha*'
+      - 'v*-rc*'
+
+permissions:
+  contents: write
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          args: release --clean
+        env:
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
