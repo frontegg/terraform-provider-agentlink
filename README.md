@@ -1,6 +1,6 @@
 # Terraform Provider for Frontegg AgentLink
 
-[![CI](https://github.com/frontegg/terraform-provider-agentlink/actions/workflows/ci.yml/badge.svg)](https://github.com/frontegg/terraform-provider-agentlink/actions/workflows/ci.yml)
+[![CI](https://github.com/frontegg/terraform-provider-agentlink/actions/workflows/test.yml/badge.svg)](https://github.com/frontegg/terraform-provider-agentlink/actions/workflows/test.yml)
 [![Release](https://github.com/frontegg/terraform-provider-agentlink/actions/workflows/release.yml/badge.svg)](https://github.com/frontegg/terraform-provider-agentlink/actions/workflows/release.yml)
 [![Terraform Registry](https://img.shields.io/badge/Terraform-Registry-blue.svg)](https://registry.terraform.io/providers/frontegg/agentlink/latest)
 
