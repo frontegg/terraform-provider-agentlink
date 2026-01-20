@@ -1,83 +1,53 @@
-name: Release
-
+# This GitHub action can publish assets for release when a tag is created.
+# Currently its setup to run on any tag that matches the pattern "v*" (ie. v0.1.0).
+# It also supports beta releases with tags like "v1.0.0-beta.1".
+#
+# This uses an action (crazy-max/ghaction-import-gpg) that assumes you set your
+# private key in the `GPG_PRIVATE_KEY` secret and passphrase in the `PASSPHRASE`
+# secret. If you would rather own your own GPG handling, please fork this action
+# or use an alternative one for key handling.
+#
+# You will need to pass the `--batch` flag to `gpg` in your signing step
+# in `goreleaser` to indicate this is being used in a non-interactive mode.
+#
+name: release
 on:
   push:
-    branches:
-      - master
-      - main
+    tags:
+      - "v*"
+      - "v*-beta*"
+      - "v*-alpha*"
+      - "v*-rc*"
 
 permissions:
   contents: write
 
 jobs:
-  release:
-    name: Build and Release
+  goreleaser:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
+          # Allow goreleaser to access older tag information.
           fetch-depth: 0
-
       - name: Unshallow
         run: git fetch --prune
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
           cache: true
-
-      - name: Run tests
-        run: go test -v ./...
-
-      - name: Get latest tag
-        id: get_tag
-        run: |
-          # Get the latest tag, default to v0.0.0 if no tags exist
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
-          echo "Latest tag: $LATEST_TAG"
-
-      - name: Calculate next version
-        id: next_version
-        run: |
-          LATEST_TAG="${{ steps.get_tag.outputs.latest_tag }}"
-
-          # Remove 'v' prefix if present
-          VERSION=${LATEST_TAG#v}
-
-          # Split version into parts
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-
-          # Increment minor version and reset patch
-          MINOR=$((MINOR + 1))
-          PATCH=0
-
-          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "New version: $NEW_VERSION"
-
-      - name: Create and push tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ steps.next_version.outputs.new_version }}" -m "Release ${{ steps.next_version.outputs.new_version }}"
-          git push origin "${{ steps.next_version.outputs.new_version }}"
-
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
         id: import_gpg
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          distribution: goreleaser
-          version: '~> v2'
+          version: "~> v2"
           args: release --clean
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
