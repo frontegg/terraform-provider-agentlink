@@ -1,6 +1,6 @@
 provider_installation {
   dev_overrides {
-    "frontegg/agentlink" = "/Users/bodgantsiganiuk/Repos/agentlink-terraform-provider"
+    "frontegg/agentlink" = "/Users/bodgantsiganiuk/Repos/terraform-provider-agentlink"
   }
   direct {}
 }

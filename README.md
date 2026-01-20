@@ -1,7 +1,7 @@
 # Terraform Provider for Frontegg AgentLink
 
-[![CI](https://github.com/frontegg/agentlink-terraform-provider/actions/workflows/ci.yml/badge.svg)](https://github.com/frontegg/agentlink-terraform-provider/actions/workflows/ci.yml)
-[![Release](https://github.com/frontegg/agentlink-terraform-provider/actions/workflows/release.yml/badge.svg)](https://github.com/frontegg/agentlink-terraform-provider/actions/workflows/release.yml)
+[![CI](https://github.com/frontegg/terraform-provider-agentlink/actions/workflows/ci.yml/badge.svg)](https://github.com/frontegg/terraform-provider-agentlink/actions/workflows/ci.yml)
+[![Release](https://github.com/frontegg/terraform-provider-agentlink/actions/workflows/release.yml/badge.svg)](https://github.com/frontegg/terraform-provider-agentlink/actions/workflows/release.yml)
 [![Terraform Registry](https://img.shields.io/badge/Terraform-Registry-blue.svg)](https://registry.terraform.io/providers/frontegg/agentlink/latest)
 
 A Terraform provider for managing [Frontegg AgentLink](https://frontegg.com) resources. AgentLink enables you to build and deploy secure AI agents with enterprise-grade access control, data masking, and Model Context Protocol (MCP) integration.
@@ -75,8 +75,8 @@ terraform init
 Clone the repository and build:
 
 ```bash
-git clone https://github.com/frontegg/agentlink-terraform-provider.git
-cd agentlink-terraform-provider
+git clone https://github.com/frontegg/terraform-provider-agentlink.git
+cd terraform-provider-agentlink
 make install
 ```
 
@@ -989,4 +989,4 @@ See [LICENSE](LICENSE) for details.
 - [Frontegg Documentation](https://docs.frontegg.com)
 - [Terraform Documentation](https://www.terraform.io/docs)
 - [Model Context Protocol (MCP)](https://modelcontextprotocol.io)
-- [Report Issues](https://github.com/frontegg/agentlink-terraform-provider/issues)
+- [Report Issues](https://github.com/frontegg/terraform-provider-agentlink/issues)

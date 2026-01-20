@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 
-	"github.com/frontegg/terraform-provider-frontegg/internal/client"
+	"github.com/frontegg/terraform-provider-agentlink/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"

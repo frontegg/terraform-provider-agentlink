@@ -1,4 +1,4 @@
-module github.com/frontegg/terraform-provider-frontegg
+module github.com/frontegg/terraform-provider-agentlink
 
 go 1.24.0
 

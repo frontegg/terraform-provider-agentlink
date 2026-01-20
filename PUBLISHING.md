@@ -1,6 +1,6 @@
 # Publishing to HashiCorp Terraform Registry
 
-This document describes the requirements and steps to publish the `agentlink-terraform-provider` to the [HashiCorp Terraform Registry](https://registry.terraform.io/).
+This document describes the requirements and steps to publish the `terraform-provider-agentlink` to the [HashiCorp Terraform Registry](https://registry.terraform.io/).
 
 ## Prerequisites
 
@@ -9,8 +9,7 @@ This document describes the requirements and steps to publish the `agentlink-ter
 The repository must meet these requirements:
 
 - **Repository Name**: Must follow the pattern `terraform-provider-{NAME}`
-  - Current: `agentlink-terraform-provider`
-  - **Required**: Rename to `terraform-provider-agentlink`
+  - Current: `terraform-provider-agentlink` ✓
 
 - **Public Repository**: The repository must be public for the Terraform Registry to access it
 
@@ -79,19 +78,9 @@ Configure these secrets in your GitHub repository:
 terraform-provider-{NAME}
 ```
 
-Your current repository is named `agentlink-terraform-provider`, which needs to be renamed to:
+Your repository is correctly named `terraform-provider-agentlink`.
 
-```
-terraform-provider-agentlink
-```
-
-### How to Rename the Repository
-
-1. Go to GitHub repository settings
-2. Under "Repository name", change to `terraform-provider-agentlink`
-3. Update any references in documentation and workflows
-
-After renaming, users will install the provider as:
+Users will install the provider as:
 
 ```hcl
 terraform {

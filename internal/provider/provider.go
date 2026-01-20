@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/frontegg/terraform-provider-frontegg/internal/client"
+	"github.com/frontegg/terraform-provider-agentlink/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
