@@ -18,6 +18,13 @@ on:
       - "v*-beta*"
       - "v*-alpha*"
       - "v*-rc*"
+  # Allow this workflow to be called from auto-version-tag workflow
+  workflow_call:
+    inputs:
+      tag:
+        description: "The tag to release"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -31,8 +38,10 @@ jobs:
         with:
           # Allow goreleaser to access older tag information.
           fetch-depth: 0
+          # Use the tag from workflow_call input if available, otherwise use the ref
+          ref: ${{ inputs.tag || github.ref }}
       - name: Unshallow
-        run: git fetch --prune
+        run: git fetch --prune --tags
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
