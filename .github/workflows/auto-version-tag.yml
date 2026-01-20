@@ -149,7 +149,8 @@ jobs:
   release:
     name: Trigger Release
     needs: tag-version
-    if: needs.tag-version.outputs.tag_created == 'true'
+    # Use fromJSON to properly convert the string 'true'/'false' to boolean
+    if: fromJSON(needs.tag-version.outputs.tag_created)
     uses: ./.github/workflows/release.yml
     with:
       tag: ${{ needs.tag-version.outputs.new_version }}
