@@ -58,7 +58,7 @@ func TestApplicationResourceImplementsResource(t *testing.T) {
 	r := NewApplicationResource()
 
 	// Verify it implements the resource.Resource interface
-	var _ resource.Resource = r
+	var _ = r
 
 	// Verify it implements ResourceWithImportState
 	var _ resource.ResourceWithImportState = r.(*ApplicationResource)

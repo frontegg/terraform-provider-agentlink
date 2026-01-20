@@ -49,6 +49,6 @@ func TestToolsImportResourceMetadata(t *testing.T) {
 func TestToolsImportResourceImplementsResource(t *testing.T) {
 	r := NewToolsImportResource()
 
-	var _ resource.Resource = r
+	var _ = r
 	// Note: ToolsImportResource does not implement ImportState
 }

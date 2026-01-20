@@ -57,6 +57,6 @@ func TestSourceResourceMetadata(t *testing.T) {
 func TestSourceResourceImplementsResource(t *testing.T) {
 	r := NewSourceResource()
 
-	var _ resource.Resource = r
+	var _ = r
 	var _ resource.ResourceWithImportState = r.(*SourceResource)
 }

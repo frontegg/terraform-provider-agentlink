@@ -58,7 +58,7 @@ func TestConditionalPolicyResourceMetadata(t *testing.T) {
 func TestConditionalPolicyResourceImplementsResource(t *testing.T) {
 	r := NewConditionalPolicyResource()
 
-	var _ resource.Resource = r
+	var _ = r
 	var _ resource.ResourceWithImportState = r.(*ConditionalPolicyResource)
 }
 
@@ -108,7 +108,7 @@ func TestRbacPolicyResourceMetadata(t *testing.T) {
 func TestRbacPolicyResourceImplementsResource(t *testing.T) {
 	r := NewRbacPolicyResource()
 
-	var _ resource.Resource = r
+	var _ = r
 	var _ resource.ResourceWithImportState = r.(*RbacPolicyResource)
 }
 
@@ -158,6 +158,6 @@ func TestMaskingPolicyResourceMetadata(t *testing.T) {
 func TestMaskingPolicyResourceImplementsResource(t *testing.T) {
 	r := NewMaskingPolicyResource()
 
-	var _ resource.Resource = r
+	var _ = r
 	var _ resource.ResourceWithImportState = r.(*MaskingPolicyResource)
 }

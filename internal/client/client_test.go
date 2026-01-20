@@ -44,7 +44,7 @@ func TestAuthenticate(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(AuthResponse{
+		_ = json.NewEncoder(w).Encode(AuthResponse{
 			Token:     "test-token",
 			ExpiresIn: 3600,
 		})
@@ -65,7 +65,7 @@ func TestAuthenticate(t *testing.T) {
 func TestAuthenticateFailure(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"error": "invalid credentials"}`))
+		_, _ = w.Write([]byte(`{"error": "invalid credentials"}`))
 	}))
 	defer server.Close()
 
@@ -81,7 +81,7 @@ func TestGetApplications(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/applications/resources/applications/v1":
 			if r.Method != http.MethodGet {
 				t.Errorf("expected GET, got %s", r.Method)
@@ -90,7 +90,7 @@ func TestGetApplications(t *testing.T) {
 				{ID: "app-1", Name: "App One", VendorID: "vendor-1"},
 				{ID: "app-2", Name: "App Two", VendorID: "vendor-1"},
 			}
-			json.NewEncoder(w).Encode(apps)
+			_ = json.NewEncoder(w).Encode(apps)
 		default:
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
@@ -115,16 +115,16 @@ func TestCreateApplication(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/applications/resources/applications/v1":
 			if r.Method != http.MethodPost {
 				t.Errorf("expected POST, got %s", r.Method)
 			}
 			var req CreateApplicationRequest
-			json.NewDecoder(r.Body).Decode(&req)
+			_ = json.NewDecoder(r.Body).Decode(&req)
 
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(Application{
+			_ = json.NewEncoder(w).Encode(Application{
 				ID:       "new-app-id",
 				Name:     req.Name,
 				AppURL:   req.AppURL,
@@ -160,9 +160,9 @@ func TestGetApplicationByID(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/applications/resources/applications/v1/app-123":
-			json.NewEncoder(w).Encode(Application{
+			_ = json.NewEncoder(w).Encode(Application{
 				ID:       "app-123",
 				Name:     "My App",
 				VendorID: "vendor-1",
@@ -188,7 +188,7 @@ func TestGetApplicationByIDNotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -210,13 +210,14 @@ func TestUpdateApplication(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/applications/resources/applications/v1/app-123":
-			if r.Method == http.MethodPatch {
+			switch r.Method {
+			case http.MethodPatch:
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-			} else if r.Method == http.MethodGet {
-				json.NewEncoder(w).Encode(Application{
+				_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+			case http.MethodGet:
+				_ = json.NewEncoder(w).Encode(Application{
 					ID:       "app-123",
 					Name:     "Updated App",
 					VendorID: "vendor-1",
@@ -245,7 +246,7 @@ func TestDeleteApplication(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/applications/resources/applications/v1/app-123":
 			if r.Method != http.MethodDelete {
 				t.Errorf("expected DELETE, got %s", r.Method)
@@ -269,7 +270,7 @@ func TestGetSources(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/app-mcp-configuration-sources/v1":
 			if r.URL.Query().Get("appId") != "app-123" {
 				t.Errorf("expected appId query param 'app-123', got '%s'", r.URL.Query().Get("appId"))
@@ -278,7 +279,7 @@ func TestGetSources(t *testing.T) {
 				{ID: "src-1", Name: "Source One", Type: "REST"},
 				{ID: "src-2", Name: "Source Two", Type: "GRAPHQL"},
 			}
-			json.NewEncoder(w).Encode(sources)
+			_ = json.NewEncoder(w).Encode(sources)
 		default:
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
@@ -300,15 +301,15 @@ func TestCreateSource(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/app-mcp-configuration-sources/v1":
 			if r.Method != http.MethodPost {
 				t.Errorf("expected POST, got %s", r.Method)
 			}
 			var req CreateSourceRequest
-			json.NewDecoder(r.Body).Decode(&req)
+			_ = json.NewDecoder(r.Body).Decode(&req)
 
-			json.NewEncoder(w).Encode(Source{
+			_ = json.NewEncoder(w).Encode(Source{
 				ID:        "new-src-id",
 				Name:      req.Name,
 				Type:      req.Type,
@@ -344,12 +345,12 @@ func TestUpdateSource(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/app-mcp-configuration-sources/v1/src-123":
 			if r.Method != http.MethodPatch {
 				t.Errorf("expected PATCH, got %s", r.Method)
 			}
-			json.NewEncoder(w).Encode(Source{
+			_ = json.NewEncoder(w).Encode(Source{
 				ID:        "src-123",
 				Name:      "Updated Source",
 				Type:      "REST",
@@ -379,7 +380,7 @@ func TestDeleteSource(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/app-mcp-configuration-sources/v1/src-123":
 			if r.Method != http.MethodDelete {
 				t.Errorf("expected DELETE, got %s", r.Method)
@@ -406,15 +407,15 @@ func TestCreateOrUpdateMcpConfiguration(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/app-mcp-configurations/v1":
 			if r.Method != http.MethodPost {
 				t.Errorf("expected POST, got %s", r.Method)
 			}
 			var req CreateOrUpdateMcpConfigurationRequest
-			json.NewDecoder(r.Body).Decode(&req)
+			_ = json.NewDecoder(r.Body).Decode(&req)
 
-			json.NewEncoder(w).Encode(McpConfiguration{
+			_ = json.NewEncoder(w).Encode(McpConfiguration{
 				ID:         "mcp-config-id",
 				AppID:      req.AppID,
 				BaseURL:    req.BaseURL,
@@ -449,12 +450,12 @@ func TestGetMcpConfiguration(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/app-mcp-configurations/v1":
 			if r.URL.Query().Get("appId") != "app-123" {
 				t.Errorf("expected appId 'app-123', got '%s'", r.URL.Query().Get("appId"))
 			}
-			json.NewEncoder(w).Encode(McpConfiguration{
+			_ = json.NewEncoder(w).Encode(McpConfiguration{
 				ID:         "mcp-config-id",
 				AppID:      "app-123",
 				BaseURL:    "https://api.example.com",
@@ -481,15 +482,15 @@ func TestCreateConditionalPolicy(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/policies/v1":
 			if r.Method != http.MethodPost {
 				t.Errorf("expected POST, got %s", r.Method)
 			}
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(map[string]string{"id": "policy-123"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"id": "policy-123"})
 		case "/app-integrations/resources/policies/v1/policy-123":
-			json.NewEncoder(w).Encode(Policy{
+			_ = json.NewEncoder(w).Encode(Policy{
 				ID:      "policy-123",
 				Name:    "Test Policy",
 				Type:    "CONDITIONAL",
@@ -520,9 +521,9 @@ func TestGetConditionalPolicy(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/policies/v1/policy-123":
-			json.NewEncoder(w).Encode(Policy{
+			_ = json.NewEncoder(w).Encode(Policy{
 				ID:      "policy-123",
 				Name:    "Test Policy",
 				Type:    "CONDITIONAL",
@@ -549,18 +550,18 @@ func TestCreateRbacPolicy(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/policies/v1/rbac":
 			if r.Method != http.MethodPost {
 				t.Errorf("expected POST, got %s", r.Method)
 			}
 			var req CreateRbacPolicyRequest
-			json.NewDecoder(r.Body).Decode(&req)
+			_ = json.NewDecoder(r.Body).Decode(&req)
 
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(map[string]string{"id": "rbac-policy-123"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"id": "rbac-policy-123"})
 		case "/app-integrations/resources/policies/v1/rbac/rbac-policy-123":
-			json.NewEncoder(w).Encode(Policy{
+			_ = json.NewEncoder(w).Encode(Policy{
 				ID:      "rbac-policy-123",
 				Name:    "Admin RBAC",
 				Type:    "RBAC_ROLES",
@@ -594,9 +595,9 @@ func TestGetRbacPolicy(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/policies/v1/rbac/rbac-123":
-			json.NewEncoder(w).Encode(Policy{
+			_ = json.NewEncoder(w).Encode(Policy{
 				ID:   "rbac-123",
 				Name: "RBAC Policy",
 				Type: "RBAC_ROLES",
@@ -623,22 +624,22 @@ func TestCreateMaskingPolicy(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/policies/v1/masking":
 			if r.Method != http.MethodPost {
 				t.Errorf("expected POST, got %s", r.Method)
 			}
 			var req CreateMaskingPolicyRequest
-			json.NewDecoder(r.Body).Decode(&req)
+			_ = json.NewDecoder(r.Body).Decode(&req)
 
 			if !req.PolicyConfiguration.CreditCard {
 				t.Error("expected credit card masking to be enabled")
 			}
 
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(map[string]string{"id": "masking-policy-123"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"id": "masking-policy-123"})
 		case "/app-integrations/resources/policies/v1/masking/masking-policy-123":
-			json.NewEncoder(w).Encode(Policy{
+			_ = json.NewEncoder(w).Encode(Policy{
 				ID:      "masking-policy-123",
 				Name:    "PII Masking",
 				Type:    "MASKING",
@@ -673,9 +674,9 @@ func TestGetMaskingPolicy(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/policies/v1/masking/masking-123":
-			json.NewEncoder(w).Encode(Policy{
+			_ = json.NewEncoder(w).Encode(Policy{
 				ID:      "masking-123",
 				Name:    "Masking Policy",
 				Type:    "MASKING",
@@ -709,7 +710,7 @@ func TestDeletePolicy(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/policies/v1/policy-123":
 			if r.Method != http.MethodDelete {
 				t.Errorf("expected DELETE, got %s", r.Method)
@@ -733,19 +734,19 @@ func TestUpsertTools(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/internal-tools/v1/upsert":
 			if r.Method != http.MethodPost {
 				t.Errorf("expected POST, got %s", r.Method)
 			}
 			var req UpsertToolsRequest
-			json.NewDecoder(r.Body).Decode(&req)
+			_ = json.NewDecoder(r.Body).Decode(&req)
 
 			if len(req.Tools) != 2 {
 				t.Errorf("expected 2 tools, got %d", len(req.Tools))
 			}
 
-			json.NewEncoder(w).Encode([]InternalTool{
+			_ = json.NewEncoder(w).Encode([]InternalTool{
 				{ID: "tool-1", Name: "Tool 1"},
 				{ID: "tool-2", Name: "Tool 2"},
 			})
@@ -777,7 +778,7 @@ func TestDeleteTool(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/internal-tools/v1/tool-123":
 			if r.Method != http.MethodDelete {
 				t.Errorf("expected DELETE, got %s", r.Method)
@@ -804,14 +805,14 @@ func TestFindApplicationByName(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/applications/resources/applications/v1":
 			apps := []Application{
 				{ID: "app-1", Name: "First App"},
 				{ID: "app-2", Name: "Target App"},
 				{ID: "app-3", Name: "Third App"},
 			}
-			json.NewEncoder(w).Encode(apps)
+			_ = json.NewEncoder(w).Encode(apps)
 		default:
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
@@ -846,13 +847,13 @@ func TestFindSourceByName(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/auth/vendor":
-			json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
+			_ = json.NewEncoder(w).Encode(AuthResponse{Token: "token", ExpiresIn: 3600})
 		case "/app-integrations/resources/app-mcp-configuration-sources/v1":
 			sources := []Source{
 				{ID: "src-1", Name: "First Source"},
 				{ID: "src-2", Name: "Target Source"},
 			}
-			json.NewEncoder(w).Encode(sources)
+			_ = json.NewEncoder(w).Encode(sources)
 		default:
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
