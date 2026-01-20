@@ -297,7 +297,7 @@ func TestAccFullStack(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactoriesAcc,
 		Steps: []resource.TestStep{
 			{
-				Config: providerConfig() + fmt.Sprintf(`
+				Config: providerConfig() + `
 resource "agentlink_application" "test" {
   name        = "TF Full Stack Test"
   app_url     = "https://fullstack-test.example.com"
@@ -333,7 +333,7 @@ output "mcp_config_id" {
 output "source_id" {
   value = agentlink_source.rest.id
 }
-`),
+`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("agentlink_application.test", "id"),
 					resource.TestCheckResourceAttrSet("agentlink_mcp_configuration.test", "id"),

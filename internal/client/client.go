@@ -144,7 +144,7 @@ func (c *Client) Authenticate(ctx context.Context) error {
 		})
 		return fmt.Errorf("failed to execute auth request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Log the trace ID for debugging
 	logTraceID(ctx, resp, "POST /auth/vendor")
@@ -255,7 +255,7 @@ func (c *Client) GetApplications(ctx context.Context) ([]Application, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get applications: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -318,7 +318,7 @@ func (c *Client) CreateApplication(ctx context.Context, req CreateApplicationReq
 	if err != nil {
 		return nil, fmt.Errorf("failed to create application: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -387,7 +387,7 @@ func (c *Client) GetSources(ctx context.Context, appID string) ([]Source, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sources: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -452,7 +452,7 @@ func (c *Client) CreateSource(ctx context.Context, req CreateSourceRequest) (*So
 	if err != nil {
 		return nil, fmt.Errorf("failed to create source: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -593,7 +593,7 @@ func (c *Client) importSchema(ctx context.Context, appID string, schemaContent [
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute import request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Log the trace ID for debugging
 	logTraceID(ctx, resp, fmt.Sprintf("POST %s", endpoint))
@@ -632,7 +632,7 @@ func (c *Client) UpsertTools(ctx context.Context, req UpsertToolsRequest) ([]Int
 	if err != nil {
 		return nil, fmt.Errorf("failed to upsert tools: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -726,7 +726,7 @@ func (c *Client) GetApplicationByID(ctx context.Context, id string) (*Applicatio
 	if err != nil {
 		return nil, fmt.Errorf("failed to get application: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil
@@ -756,7 +756,7 @@ func (c *Client) UpdateApplication(ctx context.Context, id string, req UpdateApp
 	if err != nil {
 		return nil, fmt.Errorf("failed to update application: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -778,7 +778,7 @@ func (c *Client) DeleteApplication(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete application: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -819,7 +819,7 @@ func (c *Client) CreateOrUpdateMcpConfiguration(ctx context.Context, req CreateO
 	if err != nil {
 		return nil, fmt.Errorf("failed to create/update MCP configuration: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -845,7 +845,7 @@ func (c *Client) GetMcpConfiguration(ctx context.Context, appID string) (*McpCon
 	if err != nil {
 		return nil, fmt.Errorf("failed to get MCP configuration: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil
@@ -905,7 +905,7 @@ func (c *Client) UpdateSource(ctx context.Context, sourceID string, req UpdateSo
 	if err != nil {
 		return nil, fmt.Errorf("failed to update source: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -931,7 +931,7 @@ func (c *Client) DeleteSource(ctx context.Context, appID, sourceID string) error
 	if err != nil {
 		return fmt.Errorf("failed to delete source: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -1095,7 +1095,7 @@ func (c *Client) CreateConditionalPolicy(ctx context.Context, req CreateConditio
 	if err != nil {
 		return nil, fmt.Errorf("failed to create conditional policy: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -1124,7 +1124,7 @@ func (c *Client) GetConditionalPolicy(ctx context.Context, id string) (*Policy, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get conditional policy: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil
@@ -1154,7 +1154,7 @@ func (c *Client) UpdateConditionalPolicy(ctx context.Context, id string, req Upd
 	if err != nil {
 		return nil, fmt.Errorf("failed to update conditional policy: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -1176,7 +1176,7 @@ func (c *Client) DeletePolicy(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete policy: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -1201,7 +1201,7 @@ func (c *Client) CreateRbacPolicy(ctx context.Context, req CreateRbacPolicyReque
 	if err != nil {
 		return nil, fmt.Errorf("failed to create RBAC policy: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -1230,7 +1230,7 @@ func (c *Client) GetRbacPolicy(ctx context.Context, id string) (*Policy, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get RBAC policy: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil
@@ -1260,7 +1260,7 @@ func (c *Client) UpdateRbacPolicy(ctx context.Context, id string, req UpdateRbac
 	if err != nil {
 		return nil, fmt.Errorf("failed to update RBAC policy: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -1285,7 +1285,7 @@ func (c *Client) CreateMaskingPolicy(ctx context.Context, req CreateMaskingPolic
 	if err != nil {
 		return nil, fmt.Errorf("failed to create masking policy: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -1314,7 +1314,7 @@ func (c *Client) GetMaskingPolicy(ctx context.Context, id string) (*Policy, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to get masking policy: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil
@@ -1344,7 +1344,7 @@ func (c *Client) UpdateMaskingPolicy(ctx context.Context, id string, req UpdateM
 	if err != nil {
 		return nil, fmt.Errorf("failed to update masking policy: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -1372,7 +1372,7 @@ func (c *Client) DeleteToolsBySource(ctx context.Context, appID, sourceID string
 	if err != nil {
 		return fmt.Errorf("failed to get tools: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -1406,7 +1406,7 @@ func (c *Client) DeleteTool(ctx context.Context, appID, toolID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete tool: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -1436,7 +1436,7 @@ func (c *Client) GetVendorConfig(ctx context.Context) (*VendorConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get vendor config: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -1470,7 +1470,7 @@ func (c *Client) UpdateAllowedOrigins(ctx context.Context, origins []string) (*V
 	if err != nil {
 		return nil, fmt.Errorf("failed to update allowed origins: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)

@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -11,7 +12,7 @@ func TestAllowedOriginsResourceHasExpectedSchema(t *testing.T) {
 	r := NewAllowedOriginsResource()
 
 	schemaResp := &resource.SchemaResponse{}
-	r.Schema(nil, resource.SchemaRequest{}, schemaResp)
+	r.Schema(context.TODO(), resource.SchemaRequest{}, schemaResp)
 
 	if schemaResp.Schema.Attributes == nil {
 		t.Fatal("Schema should have attributes")
@@ -43,7 +44,7 @@ func TestAllowedOriginsResourceMetadata(t *testing.T) {
 	r := NewAllowedOriginsResource()
 
 	metaResp := &resource.MetadataResponse{}
-	r.Metadata(nil, resource.MetadataRequest{ProviderTypeName: "agentlink"}, metaResp)
+	r.Metadata(context.TODO(), resource.MetadataRequest{ProviderTypeName: "agentlink"}, metaResp)
 
 	if metaResp.TypeName != "agentlink_allowed_origins" {
 		t.Errorf("Expected type name agentlink_allowed_origins, got %s", metaResp.TypeName)
@@ -51,6 +52,6 @@ func TestAllowedOriginsResourceMetadata(t *testing.T) {
 }
 
 func TestAllowedOriginsResourceImplementsResource(t *testing.T) {
-	var _ resource.Resource = NewAllowedOriginsResource()
+	var _ = NewAllowedOriginsResource()
 	var _ resource.ResourceWithImportState = NewAllowedOriginsResource().(*AllowedOriginsResource)
 }

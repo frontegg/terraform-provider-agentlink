@@ -51,6 +51,6 @@ func TestMcpConfigurationResourceMetadata(t *testing.T) {
 func TestMcpConfigurationResourceImplementsResource(t *testing.T) {
 	r := NewMcpConfigurationResource()
 
-	var _ resource.Resource = r
+	var _ = r
 	var _ resource.ResourceWithImportState = r.(*McpConfigurationResource)
 }
