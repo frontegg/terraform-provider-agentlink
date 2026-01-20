@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/frontegg/terraform-provider-frontegg/internal/client"
+	"github.com/frontegg/terraform-provider-agentlink/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"

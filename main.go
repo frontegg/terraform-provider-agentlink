@@ -5,7 +5,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/frontegg/terraform-provider-frontegg/internal/provider"
+	"github.com/frontegg/terraform-provider-agentlink/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
