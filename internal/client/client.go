@@ -1423,6 +1423,17 @@ type VendorConfig struct {
 	AllowedOrigins []string `json:"allowedOrigins"`
 }
 
+// IdentityConfiguration represents the identity configuration response
+type IdentityConfiguration struct {
+	ID                      string `json:"id"`
+	DefaultTokenExpiration  int    `json:"defaultTokenExpiration"`
+}
+
+// UpdateIdentityConfigurationRequest represents the request to update identity configuration
+type UpdateIdentityConfigurationRequest struct {
+	DefaultTokenExpiration *int `json:"defaultTokenExpiration,omitempty"`
+}
+
 // UpdateAllowedOriginsRequest represents the request to update allowed origins
 type UpdateAllowedOriginsRequest struct {
 	AllowedOrigins []string `json:"allowedOrigins"`
@@ -1485,6 +1496,69 @@ func (c *Client) UpdateAllowedOrigins(ctx context.Context, origins []string) (*V
 	tflog.Info(ctx, "Successfully updated allowed origins", map[string]interface{}{
 		"vendor_id":       config.ID,
 		"allowed_origins": config.AllowedOrigins,
+	})
+
+	return &config, nil
+}
+
+// ============================================================================
+// Identity Configuration Methods
+// ============================================================================
+
+// GetIdentityConfiguration retrieves the identity configuration
+func (c *Client) GetIdentityConfiguration(ctx context.Context) (*IdentityConfiguration, error) {
+	tflog.Info(ctx, "Fetching identity configuration")
+
+	// Use POST with empty body to get current config (addOrUpdate returns current state)
+	resp, err := c.DoRequest(ctx, http.MethodPost, "/identity/resources/configurations/v1", map[string]interface{}{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get identity configuration: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get identity configuration with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var config IdentityConfiguration
+	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
+		return nil, fmt.Errorf("failed to decode identity configuration response: %w", err)
+	}
+
+	tflog.Info(ctx, "Successfully fetched identity configuration", map[string]interface{}{
+		"id":                       config.ID,
+		"default_token_expiration": config.DefaultTokenExpiration,
+	})
+
+	return &config, nil
+}
+
+// UpdateIdentityConfiguration updates the identity configuration
+func (c *Client) UpdateIdentityConfiguration(ctx context.Context, req UpdateIdentityConfigurationRequest) (*IdentityConfiguration, error) {
+	tflog.Info(ctx, "Updating identity configuration", map[string]interface{}{
+		"default_token_expiration": req.DefaultTokenExpiration,
+	})
+
+	resp, err := c.DoRequest(ctx, http.MethodPost, "/identity/resources/configurations/v1", req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update identity configuration: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to update identity configuration with status %d: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var config IdentityConfiguration
+	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
+		return nil, fmt.Errorf("failed to decode identity configuration response: %w", err)
+	}
+
+	tflog.Info(ctx, "Successfully updated identity configuration", map[string]interface{}{
+		"id":                       config.ID,
+		"default_token_expiration": config.DefaultTokenExpiration,
 	})
 
 	return &config, nil
