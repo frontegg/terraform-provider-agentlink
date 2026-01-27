@@ -11,7 +11,7 @@ func TestProviderHasExpectedResources(t *testing.T) {
 	p := &FronteggProvider{}
 	resources := p.Resources(context.Background())
 
-	expectedCount := 8
+	expectedCount := 9
 	if len(resources) != expectedCount {
 		t.Errorf("expected %d resources, got %d", expectedCount, len(resources))
 	}

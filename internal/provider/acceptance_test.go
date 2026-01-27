@@ -391,3 +391,36 @@ resource "agentlink_allowed_origins" "test" {
 		},
 	})
 }
+
+// TestAccIdentityConfigurationResource tests the identity configuration resource
+func TestAccIdentityConfigurationResource(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactoriesAcc,
+		Steps: []resource.TestStep{
+			// Create and Read testing
+			{
+				Config: providerConfig() + `
+resource "agentlink_identity_configuration" "test" {
+  default_token_expiration = 3600
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("agentlink_identity_configuration.test", "id"),
+					resource.TestCheckResourceAttr("agentlink_identity_configuration.test", "default_token_expiration", "3600"),
+				),
+			},
+			// Update testing - change token expiration
+			{
+				Config: providerConfig() + `
+resource "agentlink_identity_configuration" "test" {
+  default_token_expiration = 7200
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("agentlink_identity_configuration.test", "default_token_expiration", "7200"),
+				),
+			},
+		},
+	})
+}
