@@ -1514,7 +1514,7 @@ func (c *Client) GetIdentityConfiguration(ctx context.Context) (*IdentityConfigu
 	if err != nil {
 		return nil, fmt.Errorf("failed to get identity configuration: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -1544,7 +1544,7 @@ func (c *Client) UpdateIdentityConfiguration(ctx context.Context, req UpdateIden
 	if err != nil {
 		return nil, fmt.Errorf("failed to update identity configuration: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		bodyBytes, _ := io.ReadAll(resp.Body)

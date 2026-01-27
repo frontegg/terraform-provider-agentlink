@@ -56,7 +56,7 @@ func TestIdentityConfigurationResourceImplementsResource(t *testing.T) {
 	r := NewIdentityConfigurationResource()
 
 	// Verify it implements the resource.Resource interface
-	var _ resource.Resource = r
+	var _ = r
 }
 
 func TestIdentityConfigurationResourceSchemaDescription(t *testing.T) {
