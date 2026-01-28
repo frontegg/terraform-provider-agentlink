@@ -598,7 +598,7 @@ func (c *Client) importSchema(ctx context.Context, appID string, schemaContent [
 	// Log the trace ID for debugging
 	logTraceID(ctx, resp, fmt.Sprintf("POST %s", endpoint))
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		tflog.Error(ctx, "Failed to import schema", map[string]interface{}{
 			"status_code":       resp.StatusCode,
