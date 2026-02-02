@@ -149,7 +149,7 @@ func (c *Client) Authenticate(ctx context.Context) error {
 	// Log the trace ID for debugging
 	logTraceID(ctx, resp, "POST /auth/vendor")
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		tflog.Error(ctx, "Authentication failed", map[string]interface{}{
 			"status_code":       resp.StatusCode,
@@ -209,6 +209,11 @@ func logTraceID(ctx context.Context, resp *http.Response, operation string) {
 	}
 }
 
+// isSuccessStatus checks if the HTTP status code is in the 2xx range
+func isSuccessStatus(statusCode int) bool {
+	return statusCode >= 200 && statusCode < 300
+}
+
 // DoRequest executes an authenticated HTTP request
 func (c *Client) DoRequest(ctx context.Context, method, path string, body interface{}) (*http.Response, error) {
 	token, err := c.GetAccessToken(ctx)
@@ -257,7 +262,7 @@ func (c *Client) GetApplications(ctx context.Context) ([]Application, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		tflog.Error(ctx, "Failed to get applications", map[string]interface{}{
 			"status_code": resp.StatusCode,
@@ -320,7 +325,7 @@ func (c *Client) CreateApplication(ctx context.Context, req CreateApplicationReq
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusCreated {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		tflog.Error(ctx, "Failed to create application", map[string]interface{}{
 			"status_code": resp.StatusCode,
@@ -389,7 +394,7 @@ func (c *Client) GetSources(ctx context.Context, appID string) ([]Source, error)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		tflog.Error(ctx, "Failed to get sources", map[string]interface{}{
 			"status_code": resp.StatusCode,
@@ -454,7 +459,7 @@ func (c *Client) CreateSource(ctx context.Context, req CreateSourceRequest) (*So
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		tflog.Error(ctx, "Failed to create source", map[string]interface{}{
 			"status_code": resp.StatusCode,
@@ -598,7 +603,7 @@ func (c *Client) importSchema(ctx context.Context, appID string, schemaContent [
 	// Log the trace ID for debugging
 	logTraceID(ctx, resp, fmt.Sprintf("POST %s", endpoint))
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		tflog.Error(ctx, "Failed to import schema", map[string]interface{}{
 			"status_code":       resp.StatusCode,
@@ -634,7 +639,7 @@ func (c *Client) UpsertTools(ctx context.Context, req UpsertToolsRequest) ([]Int
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		tflog.Error(ctx, "Failed to upsert tools", map[string]interface{}{
 			"status_code": resp.StatusCode,
@@ -732,7 +737,7 @@ func (c *Client) GetApplicationByID(ctx context.Context, id string) (*Applicatio
 		return nil, nil
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to get application with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -758,7 +763,7 @@ func (c *Client) UpdateApplication(ctx context.Context, id string, req UpdateApp
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to update application with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -780,7 +785,7 @@ func (c *Client) DeleteApplication(ctx context.Context, id string) error {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("failed to delete application with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -821,7 +826,7 @@ func (c *Client) CreateOrUpdateMcpConfiguration(ctx context.Context, req CreateO
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to create/update MCP configuration with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -851,7 +856,7 @@ func (c *Client) GetMcpConfiguration(ctx context.Context, appID string) (*McpCon
 		return nil, nil
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to get MCP configuration with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -907,7 +912,7 @@ func (c *Client) UpdateSource(ctx context.Context, sourceID string, req UpdateSo
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to update source with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -933,7 +938,7 @@ func (c *Client) DeleteSource(ctx context.Context, appID, sourceID string) error
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("failed to delete source with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1097,7 +1102,7 @@ func (c *Client) CreateConditionalPolicy(ctx context.Context, req CreateConditio
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to create conditional policy with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1130,7 +1135,7 @@ func (c *Client) GetConditionalPolicy(ctx context.Context, id string) (*Policy, 
 		return nil, nil
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to get conditional policy with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1156,7 +1161,7 @@ func (c *Client) UpdateConditionalPolicy(ctx context.Context, id string, req Upd
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to update conditional policy with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1178,7 +1183,7 @@ func (c *Client) DeletePolicy(ctx context.Context, id string) error {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("failed to delete policy with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1203,7 +1208,7 @@ func (c *Client) CreateRbacPolicy(ctx context.Context, req CreateRbacPolicyReque
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to create RBAC policy with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1236,7 +1241,7 @@ func (c *Client) GetRbacPolicy(ctx context.Context, id string) (*Policy, error) 
 		return nil, nil
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to get RBAC policy with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1262,7 +1267,7 @@ func (c *Client) UpdateRbacPolicy(ctx context.Context, id string, req UpdateRbac
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to update RBAC policy with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1287,7 +1292,7 @@ func (c *Client) CreateMaskingPolicy(ctx context.Context, req CreateMaskingPolic
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to create masking policy with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1320,7 +1325,7 @@ func (c *Client) GetMaskingPolicy(ctx context.Context, id string) (*Policy, erro
 		return nil, nil
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to get masking policy with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1346,7 +1351,7 @@ func (c *Client) UpdateMaskingPolicy(ctx context.Context, id string, req UpdateM
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to update masking policy with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1374,7 +1379,7 @@ func (c *Client) DeleteToolsBySource(ctx context.Context, appID, sourceID string
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("failed to get tools with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1408,7 +1413,7 @@ func (c *Client) DeleteTool(ctx context.Context, appID, toolID string) error {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("failed to delete tool with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1449,7 +1454,7 @@ func (c *Client) GetVendorConfig(ctx context.Context) (*VendorConfig, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to get vendor config with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1483,7 +1488,7 @@ func (c *Client) UpdateAllowedOrigins(ctx context.Context, origins []string) (*V
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to update allowed origins with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1516,7 +1521,7 @@ func (c *Client) GetIdentityConfiguration(ctx context.Context) (*IdentityConfigu
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to get identity configuration with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
@@ -1546,7 +1551,7 @@ func (c *Client) UpdateIdentityConfiguration(ctx context.Context, req UpdateIden
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+	if !isSuccessStatus(resp.StatusCode) {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to update identity configuration with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
