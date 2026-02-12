@@ -684,9 +684,10 @@ func (c *Client) ImportAndUpsertSchema(ctx context.Context, appID, sourceID, sou
 		return nil
 	}
 
-	// Set sourceId on all tools
+	// Set sourceId and enable all tools
 	for i := range tools {
 		tools[i].SourceID = sourceID
+		tools[i].IsActive = true
 	}
 
 	// Upsert the tools
